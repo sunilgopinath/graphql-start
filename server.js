@@ -9,7 +9,30 @@ var schema = buildSchema(`
     random: Float!
     rollThreeDice: [Int]
     rollDice(numDice: Int!, numSides: Int): [Int]
-  }`)
+    getDie(numSides: Int): RandomDie
+  }
+
+  type RandomDie {
+    numSides: Int!
+    rollOnce: Int!
+    roll(numRolls: Int!): [Int]
+  }
+  `)
+
+  // This class implements the RandomDie GraphQL type
+  class RandomDie {
+    constructor(numSides) {
+      this.numSides = numSides;
+    }
+
+    rollOnce() {
+      return casual.integer(casual.from = 0, casual.to = this.numSides)
+    }
+
+    roll({numRolls}) {
+      return casual.array_of_digits(casual.n=numRolls).map(_ => this.rollOnce())
+    }
+  }
 
   var root = {
     quoteOfTheDay: () => {
@@ -23,6 +46,9 @@ var schema = buildSchema(`
     },
     rollDice: ({ numDice, numSides}) => {
       return casual.array_of_digits(n=numDice).map(_ => casual.integer(from = 0, to = (numSides || 6)))
+    },
+    getDie: function ({numSides}) {
+      return new RandomDie(numSides || 6);
     }
   }
 
